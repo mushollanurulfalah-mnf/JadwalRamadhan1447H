@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramadhan Digital - Musholla Nurul Falah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --emerald-primary: #064e3b;
+            --emerald-accent: #059669;
+            --gold-accent: #d4af37;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f1f5f9;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Gaya Aktif untuk Waktu Shalat & Sesi */
+        .session-active {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            color: white !important;
+            border-color: #059669 !important;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 20px 25px -5px rgba(6, 78, 59, 0.25);
+        }
+
+        .session-active p, .session-active span, .session-active h3, .session-active h4, .session-active .prayer-time {
+            color: white !important;
+        }
+
+        .session-active .icon-bg {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+        }
+
+        .nav-btn.active {
+            background-color: #064e3b;
+            color: white;
+            box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
+        }
+
+        .live-pulse {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .greeting-gradient {
+            background: linear-gradient(to right, #064e3b, #065f46);
+        }
+    </style>
+</head>
+<body class="pb-32">
+
+    <script>
+        /**
+         * PENGATURAN TAHUNAN: 
+         * Ubah tanggal ini ke 1 Ramadhan tahun depan jika ingin dipakai jangka panjang.
+         */
+        const RAMADHAN_START_DATE = new Date('2026-02-18'); 
+
+        const RAMADHAN_DATA = {
+            malamAktif: () => {
+                const now = new Date();
+                const start = new Date(RAMADHAN_START_DATE);
+                start.setHours(0,0,0,0);
+                const today = new Date(now);
+                today.setHours(0,0,0,0);
+                
+                const diffTime = today - start;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                // Malam Ramadhan baru dimulai setelah Maghrib (18:18)
+                const isAfterMaghrib = now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 18);
+                const malam = isAfterMaghrib ? diffDays + 1 : diffDays;
+                
+                return Math.max(1, Math.min(malam, 30));
+            },
+            tarawih: [
+                { malam: 1, tgl: "Rabu, 18 Feb", imam: "Ust. H. Najamuddin, S.Pd.I", bilal: "Romdhoni", muazin: "Muhammad Zidan" },
+                { malam: 2, tgl: "Kamis, 19 Feb", imam: "Zaki Ahmad Tohir", bilal: "Refy Mei Putra", muazin: "H. Musthofa" },
+                { malam: 3, tgl: "Jum'at, 20 Feb", imam: "Ahmad Zarkasyi", bilal: "Muhammad Zidan", muazin: "Farid Kurniawan" },
+                { malam: 4, tgl: "Sabtu, 21 Feb", imam: "Rahmatullah HAR", bilal: "Rayhan Kamal Maula", muazin: "Zaenal Syahri" },
+                { malam: 5, tgl: "Minggu, 22 Feb", imam: "H. Hapiz HAR", bilal: "Irfan Maulana", muazin: "Tono" },
+                { malam: 6, tgl: "Senin, 23 Feb", imam: "Ust. Hasan", bilal: "Zulkarnain", muazin: "Samhadi" },
+                { malam: 7, tgl: "Selasa, 24 Feb", imam: "Ust. Salman Alfarisi, S.Agr", bilal: "Ridwan Ismail", muazin: "Romdhoni" },
+                { malam: 8, tgl: "Rabu, 25 Feb", imam: "Ust. Ah Baikuni, Lc.Msi", bilal: "M. Rizki", muazin: "Farid Kurniawan" },
+                { malam: 9, tgl: "Kamis, 26 Feb", imam: "Rahmatullah HAR", bilal: "Romdhoni", muazin: "Ferdi Rachmat" },
+                { malam: 10, tgl: "Jum'at, 27 Feb", imam: "Ust. H. Najamuddin, S.Pd.I", bilal: "Muhammad Zidan", muazin: "H. Rizal" },
+                { malam: 11, tgl: "Sabtu, 28 Feb", imam: "Ust. Hasan", bilal: "Farhan Syauqi", muazin: "Zaenal Syahri" },
+                { malam: 12, tgl: "Minggu, 1 Mar", imam: "Ust. Maulana Hasanuddin", bilal: "Ahmad Zarkasyi", muazin: "H. Rizal" },
+                { malam: 13, tgl: "Senin, 2 Mar", imam: "Zaki Ahmad Tohir", bilal: "Refy Mei Putra", muazin: "H. Mustofa" },
+                { malam: 14, tgl: "Selasa, 3 Mar", imam: "Ust. Salman Alfarisi,S.Ag", bilal: "Rayhan Kamal Maula", muazin: "Tono" },
+                { malam: 15, tgl: "Rabu, 4 Mar", imam: "Ust. H. Najamuddin,S.Pd.I", bilal: "Hafis Huzaefah", muazin: "Romdhoni" },
+                { malam: 16, tgl: "Kamis, 5 Mar", imam: "Ust. H. Ah Baikuni, Lc.Msi", bilal: "Romdhoni", muazin: "Tugirin" },
+                { malam: 17, tgl: "Jum'at, 6 Mar", imam: "Rahmatullah HAR", bilal: "Muhammad Zidan", muazin: "H. Rizal" },
+                { malam: 18, tgl: "Sabtu, 7 Mar", imam: "Ahmad Zarkasyi", bilal: "Zulkarnain", muazin: "Muhammad Zidan" },
+                { malam: 19, tgl: "Minggu, 8 Mar", imam: "Anwar Assyubali", bilal: "M. Rizky", muazin: "Zaenal Syahri" },
+                { malam: 20, tgl: "Senin, 9 Mar", imam: "Azhari H. Hapiz", bilal: "Rayhan Kamal Maulana", muazin: "Samhadi" },
+                { malam: 21, tgl: "Selasa, 10 Mar", imam: "Ust. Salman Alfarisi,S.Ag", bilal: "Farhan Syauqi", muazin: "H. Rizal" },
+                { malam: 22, tgl: "Rabu, 11 Mar", imam: "H. Hapiz HAR", bilal: "Hafis Huzaefah", muazin: "Muhammad Zidan" },
+                { malam: 23, tgl: "Kamis, 12 Mar", imam: "Ust. H. Najamuddin, S.Pd.I", bilal: "Ridwan Ismail", muazin: "Zaenal Syahri" },
+                { malam: 24, tgl: "Jum'at, 13 Mar", imam: "Ust. Maulana Hasanuddin", bilal: "Refy Mei Putra", muazin: "Ferdi Rachmat" },
+                { malam: 25, tgl: "Sabtu, 14 Mar", imam: "Anwar Assyubali", bilal: "Romdhoni", muazin: "Tugirin" },
+                { malam: 26, tgl: "Minggu, 15 Mar", imam: "H. Hapiz HAR", bilal: "Farhan Syauqi", muazin: "H. Musthofa" },
+                { malam: 27, tgl: "Senin, 16 Mar", imam: "Ust. Hasan", bilal: "Hafis Huzaefah", muazin: "Ferdi Rachmat" },
+                { malam: 28, tgl: "Selasa, 17 Mar", imam: "Azhari H. Hapiz", bilal: "Irfan Maulana", muazin: "Muhammad Zidan" },
+                { malam: 29, tgl: "Rabu, 18 Mar", imam: "Zaki Ahmad Tohir", bilal: "Ridwan Ismail", muazin: "Romdhoni" },
+                { malam: 30, tgl: "Kamis, 19 Mar", imam: "Ust. H. Najamuddin,S.Pd.I", bilal: "Muhammad Zidan", muazin: "Tono" },
+            ],
+            tadarus: [
+                { malam: 1, tgl: "Rabu, 18 Feb", group: "Zaki Ahmad Tohir & Ust. Hasan", juz: "1", target: "Selesai" },
+                { malam: 2, tgl: "Kamis, 19 Feb", group: "Zaenal Syahri & Rahmatullah HAR", juz: "2", target: "Selesai" },
+                { malam: 3, tgl: "Jum'at, 20 Feb", group: "Anwar Assyubali & Haneza", juz: "3", target: "Selesai" },
+                { malam: 4, tgl: "Sabtu, 21 Feb", group: "Ridwan Ismail & Amrullah Sanwani", juz: "4", target: "Selesai" },
+                { malam: 5, tgl: "Minggu, 22 Feb", group: "Dodo & Azhari", juz: "5", target: "Selesai" },
+                { malam: 6, tgl: "Senin, 23 Feb", group: "Haneza & Anwar Assyubali", juz: "6", target: "Selesai" },
+                { malam: 7, tgl: "Selasa, 24 Feb", group: "Ferdi Rachmat & Dodo", juz: "7", target: "Selesai" },
+                { malam: 8, tgl: "Rabu, 25 Feb", group: "Farhan Syauqi & Muhammad Zidan", juz: "8", target: "Selesai" },
+                { malam: 9, tgl: "Kamis, 26 Feb", group: "Rayhan Kamal Maula & Ridwan Ismail", juz: "9", target: "Selesai" },
+                { malam: 10, tgl: "Jum'at, 27 Feb", group: "Muhammad Zidan & Romdhoni", juz: "10", target: "Selesai" },
+                { malam: 11, tgl: "Sabtu, 28 Feb", group: "M. Rizky & Dodo", juz: "11", target: "Selesai" },
+                { malam: 12, tgl: "Minggu, 1 Mar", group: "Putra & Ferdi Rachmat", juz: "12", target: "Selesai" },
+                { malam: 13, tgl: "Senin, 2 Mar", group: "Haneza & Farhan Syauqi", juz: "13", target: "Selesai" },
+                { malam: 14, tgl: "Selasa, 3 Mar", group: "Dodo & Ust. Maulana Hasanuddin", juz: "14", target: "Selesai" },
+                { malam: 15, tgl: "Rabu, 4 Mar", group: "Ust. Hasan & Ahmad Zarkasyi", juz: "15", target: "Selesai" },
+                { malam: 16, tgl: "Kamis, 5 Mar", group: "Zaki Ahmad Tohir & Rayhan Kamal Maula", juz: "16", target: "Selesai" },
+                { malam: 17, tgl: "Jum'at, 6 Mar", group: "Azhari & Muhammad Zidan", juz: "17", target: "Selesai" },
+                { malam: 18, tgl: "Sabtu, 7 Mar", group: "Anwar Assyubali & Ridwan Ismail", juz: "18", target: "Selesai" },
+                { malam: 19, tgl: "Minggu, 8 Mar", group: "Ridwan & Romdhoni", juz: "19", target: "Selesai" },
+                { malam: 20, tgl: "Senin, 9 Mar", group: "Romdhoni & Haneza", juz: "20", target: "Selesai" },
+                { malam: 21, tgl: "Selasa, 10 Mar", group: "Ahmad Zarkasyi & Dodo", juz: "21", target: "Selesai" },
+                { malam: 22, tgl: "Rabu, 11 Mar", group: "Amrullah Sanwani & Farhan Syauqi", juz: "22", target: "Selesai" },
+                { malam: 23, tgl: "Kamis, 12 Mar", group: "Farhan Syauqi & Zaki Ahmad Tohir", juz: "23", target: "Selesai" },
+                { malam: 24, tgl: "Jum'at, 13 Mar", group: "Rayhan Kamal Maula & Ahmad Zarkasyi", juz: "24", target: "Selesai" },
+                { malam: 25, tgl: "Sabtu, 14 Mar", group: "Muhammad Zidan & Ust. Hasan", juz: "25", target: "Selesai" },
+                { malam: 26, tgl: "Minggu, 15 Mar", group: "Zaenal Syahri & Rahmatullah HAR", juz: "26", target: "Selesai" },
+                { malam: 27, tgl: "Senin, 16 Mar", group: "Putra & Azhari", juz: "27", target: "Selesai" },
+                { malam: 28, tgl: "Selasa, 17 Mar", group: "Amrullah Sanwani & M. Rizky", juz: "28", target: "Selesai" },
+                { malam: 29, tgl: "Rabu, 18 Mar", group: "Rahmatullah HAR & Putra", juz: "29", target: "Selesai" },
+                { malam: 30, tgl: "Kamis, 19 Mar", group: "Ust. Hasan & Anwar Assyubali", juz: "30", target: "Selesai" },
+            ],
+            donatur: [
+                { malam: 1, tgl: "Rabu, 18 Feb", nama: "Ust. H. Najamuddin, S.Pd.I", item: "Konsumsi Tadarus" },
+                { malam: 2, tgl: "Kamis, 19 Feb", nama: "H. Rizal", item: "Konsumsi Tadarus" },
+                { malam: 3, tgl: "Jum'at, 20 Feb", nama: "Rudi Hartono HAH", item: "Konsumsi Tadarus" },
+                { malam: 4, tgl: "Sabtu, 21 Feb", nama: "Ricky (Tagor)", item: "Konsumsi Tadarus" },
+                { malam: 5, tgl: "Minggu, 22 Feb", nama: "Irfan Maulana", item: "Konsumsi Tadarus" },
+                { malam: 6, tgl: "Senin, 23 Feb", nama: "Tono", item: "Konsumsi Tadarus" },
+                { malam: 7, tgl: "Selasa, 24 Feb", nama: "H. Hapiz HAR", item: "Konsumsi Tadarus" },
+                { malam: 8, tgl: "Rabu, 25 Feb", nama: "H. Arlen", item: "Konsumsi Tadarus" },
+                { malam: 9, tgl: "Kamis, 26 Feb", nama: "Macca", item: "Konsumsi Tadarus" },
+                { malam: 10, tgl: "Jum'at, 27 Feb", nama: "Azhar", item: "Konsumsi Tadarus" },
+                { malam: 11, tgl: "Sabtu, 28 Feb", nama: "Kel. Alm. H. Barizi", item: "Konsumsi Tadarus" },
+                { malam: 12, tgl: "Minggu, 1 Mar", nama: "Farid Kurniawan", item: "Konsumsi Tadarus" },
+                { malam: 13, tgl: "Senin, 2 Mar", nama: "Ust. Maulana Hasanuddin", item: "Konsumsi Tadarus" },
+                { malam: 14, tgl: "Selasa, 3 Mar", nama: "Hafis Huzaefah", item: "Konsumsi Tadarus" },
+                { malam: 15, tgl: "Rabu, 4 Mar", nama: "Zulkarnain", item: "Konsumsi Tadarus" },
+                { malam: 16, tgl: "Kamis, 5 Mar", nama: "Muhammad Toha", item: "Konsumsi Tadarus" },
+                { malam: 17, tgl: "Jum'at, 6 Mar", nama: "Fery Firdaus", item: "Konsumsi Tadarus" },
+                { malam: 18, tgl: "Sabtu, 7 Mar", nama: "Uda Hendrik", item: "Konsumsi Tadarus" },
+                { malam: 19, tgl: "Minggu, 8 Mar", nama: "Zaenal Syahri", item: "Konsumsi Tadarus" },
+                { malam: 20, tgl: "Senin, 9 Mar", nama: "Azhari", item: "Konsumsi Tadarus" },
+                { malam: 21, tgl: "Selasa, 10 Mar", nama: "Zaki Ahmad Tohir", item: "Konsumsi Tadarus" },
+                { malam: 22, tgl: "Rabu, 11 Mar", nama: "Sopyan Anim", item: "Konsumsi Tadarus" },
+                { malam: 23, tgl: "Kamis, 12 Mar", nama: "Husein", item: "Konsumsi Tadarus" },
+                { malam: 24, tgl: "Jum'at, 13 Mar", nama: "Rahmat Hidayat", item: "Konsumsi Tadarus" },
+                { malam: 25, tgl: "Sabtu, 14 Mar", nama: "Reza Dego", item: "Konsumsi Tadarus" },
+                { malam: 26, tgl: "Minggu, 15 Mar", nama: "Ust. Hasan", item: "Konsumsi Tadarus" },
+                { malam: 27, tgl: "Senin, 16 Mar", nama: "Rizki (Tukil)", item: "Konsumsi Tadarus" },
+                { malam: 28, tgl: "Selasa, 17 Mar", nama: "Amrullah Sanwani", item: "Konsumsi Tadarus" },
+                { malam: 29, tgl: "Rabu, 18 Mar", nama: "Eky", item: "Konsumsi Tadarus" },
+                { malam: 30, tgl: "Kamis, 19 Mar", nama: "Syahril Anwar (Aril)", item: "Konsumsi Tadarus" },
+            ]   
+        };
+
+        const FIXED_PRAYER_TIMES = {
+            "Imsak": "04:32",
+            "Subuh": "04:42",
+            "Dzuhur": "12:10",
+            "Ashar": "15:19",
+            "Maghrib": "18:18",
+            "Isya": "19:28"
+        };
+    </script>
+
+    <!-- Header -->
+    <div class="bg-emerald-950 text-white pt-12 pb-24 px-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
+            <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                <!-- LOGO MUSHOLLA DENGAN URL -->
+                <div class="w-20 h-20 md:w-28 md:h-28 bg-white/5 backdrop-blur-md rounded-[2rem] border border-white/10 flex items-center justify-center shadow-2xl shrink-0 overflow-hidden p-3">
+                    <img src="https://i.ibb.co.com/W4rmSh0f/white-mnf2.png" class="w-full h-full object-contain rounded-xl">
+                </div>
+
+                <div>
+                    <div class="inline-flex items-center gap-3 bg-emerald-900/50 border border-emerald-800 px-5 py-1.5 rounded-full mb-6">
+                        <span class="live-pulse"></span>
+                        <span id="ramadhan-count" class="text-xs font-black uppercase tracking-widest text-emerald-300">Ramadhan 1447 H</span>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-2 uppercase leading-none text-shadow">Musholla <br class="md:hidden"> <span class="text-yellow-400">Nurul Falah</span></h1>
+                    <p class="text-emerald-100/60 text-base font-bold italic">Panitia Ta'mir Ramadhan 1447H</p>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-[2.5rem] text-center min-w-[280px] shadow-2xl">
+                <div id="digital-clock" class="text-5xl font-black font-mono text-yellow-400 tracking-tighter mb-2">00:00:00</div>
+                <p id="current-date" class="text-xs uppercase font-black tracking-[0.2em] text-emerald-300">JUM'AT, 20 FEBRUARI 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 -mt-12 relative z-20">
+        
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-content space-y-8">
+            
+            <!-- Prayer Grid -->
+            <div id="prayer-grid" class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <!-- Auto Generated -->
+            </div>
+
+            <!-- Greeting Card -->
+            <div class="greeting-gradient p-8 md:p-12 rounded-[3rem] text-center shadow-2xl relative overflow-hidden border border-emerald-800">
+                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none flex items-center justify-center">
+                    <i data-lucide="moon" class="w-64 h-64 text-white"></i>
+                </div>
+                <div class="relative z-10">
+                    <h2 class="text-yellow-400 font-black text-2xl md:text-4xl uppercase tracking-tighter mb-3 leading-tight">Selamat Menunaikan <br>Ibadah Puasa</h2>
+                    <p class="text-emerald-100/80 font-bold text-sm md:text-lg max-w-2xl mx-auto italic">"Semoga Allah SWT menerima amal ibadah kita di bulan yang penuh berkah ini dan senantiasa melimpahkan hidayah-Nya."</p>
+                </div>
+            </div>
+
+            <!-- Active Sessions Highlights -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Tarawih Highlight -->
+                <div id="session-tarawih" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
+                            <i data-lucide="users" class="w-8 h-8"></i>
+                        </div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Mulai 19:28</span>
+                    </div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Imam Tarawih</p>
+                    <h3 id="live-tarawih-imam" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100">
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p>
+                            <p id="live-tarawih-bilal" class="text-sm font-black text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p>
+                            <p id="live-tarawih-muazin" class="text-sm font-black text-slate-700">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tadarus Highlight -->
+                <div id="session-tadarus" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
+                            <i data-lucide="book-open" class="w-8 h-8"></i>
+                        </div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Mulai 20:40</span>
+                    </div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Pembaca Al-Qur'an</p>
+                    <h3 id="live-tadarus-group" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
+                    <div id="live-tadarus-badge" class="inline-block bg-yellow-400 text-emerald-950 font-black text-[10px] px-3 py-1 rounded-lg uppercase">Juz: --</div>
+                </div>
+
+                <!-- Donatur Highlight -->
+                <div id="session-donasi" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
+                            <i data-lucide="gift" class="w-8 h-8"></i>
+                        </div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Malam Ini</span>
+                    </div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Donatur Konsumsi</p>
+                    <h3 id="live-donatur-name" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
+                    <p id="live-donatur-item" class="text-sm font-bold text-emerald-600">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS OTHERS -->
+        <div id="tab-petugas" class="tab-content hidden space-y-6">
+            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Petugas Tarawih</h2>
+            <div id="container-petugas" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+
+        <div id="tab-tadarus" class="tab-content hidden space-y-6">
+            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Jadwal Tadarus</h2>
+            <div id="container-tadarus" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+
+        <div id="tab-donatur" class="tab-content hidden space-y-6">
+            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Donatur Tadarus</h2>
+            <div id="container-donatur" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+    </main>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[94%] max-w-xl bg-white/95 backdrop-blur-2xl border border-white p-2 rounded-[3rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] flex justify-between items-center z-50">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all">
+            <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Beranda</span>
+        </button>
+        <button onclick="switchTab('petugas')" id="nav-petugas" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
+            <i data-lucide="shield-check" class="w-6 h-6 mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Petugas Tarawih</span>
+        </button>
+        <button onclick="switchTab('tadarus')" id="nav-tadarus" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
+            <i data-lucide="book-copy" class="w-6 h-6 mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Petugas Tadarus</span>
+        </button>
+        <button onclick="switchTab('donatur')" id="nav-donatur" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
+            <i data-lucide="heart-handshake" class="w-6 h-6 mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Konsumsi Tadarus</span>
+        </button>
+    </nav>
+
+    <script>
+        window.onload = () => {
+            initClock();
+            renderPrayerGrid();
+            renderDynamicContent();
+            updateDashboard();
+            lucide.createIcons();
+        };
+
+        function initClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('digital-clock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                checkActiveSessions();
+            }, 1000);
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', options).toUpperCase();
+        }
+
+        function renderPrayerGrid() {
+            const container = document.getElementById('prayer-grid');
+            container.innerHTML = Object.entries(FIXED_PRAYER_TIMES).map(([key, time]) => `
+                <div id="prayer-${key}" class="glass-card p-6 rounded-[2rem] text-center border-b-4 border-transparent">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest">${key}</p>
+                    <p class="text-2xl font-black text-slate-800 prayer-time">${time}</p>
+                </div>
+            `).join('');
+        }
+
+        function updateDashboard() {
+            const malam = RAMADHAN_DATA.malamAktif();
+            document.getElementById('ramadhan-count').innerText = `Malam ke-${malam} Ramadhan 1447H`;
+            
+            const t = RAMADHAN_DATA.tarawih.find(x => x.malam === malam) || { imam: "TBA", bilal: "-", muazin: "-" };
+            document.getElementById('live-tarawih-imam').innerText = t.imam;
+            document.getElementById('live-tarawih-bilal').innerText = t.bilal;
+            document.getElementById('live-tarawih-muazin').innerText = t.muazin;
+
+            const td = RAMADHAN_DATA.tadarus.find(x => x.malam === malam) || { group: "TBA", juz: "-", target: "-" };
+            document.getElementById('live-tadarus-group').innerText = td.group;
+            document.getElementById('live-tadarus-badge').innerText = `Juz: ${td.juz}`;
+
+            const d = RAMADHAN_DATA.donatur.find(x => x.malam === malam) || { nama: "Terbuka Untuk Umum", item: "Hubungi Ta'mir" };
+            document.getElementById('live-donatur-name').innerText = d.nama;
+            document.getElementById('live-donatur-item').innerText = d.item;
+        }
+
+        function checkActiveSessions() {
+            const now = new Date();
+            const curMin = now.getHours() * 60 + now.getMinutes();
+
+            // Highlight Sholat saat ini (aktif selama 45 menit sejak waktu shalat)
+            Object.keys(FIXED_PRAYER_TIMES).forEach(key => {
+                const [h, m] = FIXED_PRAYER_TIMES[key].split(':').map(Number);
+                const pMin = h * 60 + m;
+                const el = document.getElementById(`prayer-${key}`);
+                if (el) {
+                    if (curMin >= pMin && curMin < pMin + 45) el.classList.add('session-active');
+                    else el.classList.remove('session-active');
+                }
+            });
+
+            // Highlight Sesi Kegiatan
+            const sessions = [
+                { id: 'session-tarawih', start: 19 * 60 + 20, end: 20 * 60 + 40 },
+                { id: 'session-tadarus', start: 20 * 60 + 41, end: 22 * 60 + 0 }
+            ];
+            sessions.forEach(s => {
+                const el = document.getElementById(s.id);
+                if (el && curMin >= s.start && curMin <= s.end) el.classList.add('session-active');
+                else if (el) el.classList.remove('session-active');
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        function renderDynamicContent() {
+            document.getElementById('container-petugas').innerHTML = RAMADHAN_DATA.tarawih.map(item => `
+                <div class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-4">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 bg-emerald-900 text-white rounded-2xl flex items-center justify-center font-black text-sm">${item.malam}</div>
+                        <span class="text-[10px] font-black text-emerald-600 uppercase bg-emerald-50 px-3 py-1 rounded-lg">${item.tgl}</span>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Imam Tarawih</p>
+                        <h4 class="font-black text-slate-800 text-xl leading-tight">${item.imam}</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p>
+                            <p class="text-sm font-black text-slate-700">${item.bilal}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p>
+                            <p class="text-sm font-black text-slate-700">${item.muazin}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('container-tadarus').innerHTML = RAMADHAN_DATA.tadarus.map(item => `
+                <div class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                         <span class="text-xs font-black text-emerald-900 italic">Malam ke-${item.malam}</span>
+                         <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">${item.tgl}</span>
+                    </div>
+                    <h4 class="text-lg font-black text-slate-800 leading-tight">${item.group}</h4>
+                    <div class="bg-yellow-400 text-emerald-950 text-[10px] p-2 rounded-xl text-center font-black uppercase">Juz: ${item.juz} (${item.target})</div>
+                </div>
+            `).join('');
+
+            document.getElementById('container-donatur').innerHTML = RAMADHAN_DATA.donatur.map(item => `
+                <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center gap-6">
+                    <div class="w-14 h-14 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center font-black text-lg">${item.malam}</div>
+                    <div>
+                        <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">${item.tgl}</p>
+                        <h4 class="font-black text-slate-800 text-lg leading-tight">${item.nama}</h4>
+                        <p class="text-sm font-bold text-slate-500">${item.item}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
