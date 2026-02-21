@@ -29,7 +29,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Gaya Aktif untuk Waktu Shalat & Sesi */
         .session-active {
             background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
             color: white !important;
@@ -72,33 +71,72 @@
         .greeting-gradient {
             background: linear-gradient(to right, #064e3b, #065f46);
         }
+
+        .music-btn {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            z-index: 100;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            border: 2px solid white;
+        }
+
+        .music-btn.playing {
+            background: #d4af37;
+            color: #064e3b;
+            animation: rotate 8s linear infinite;
+        }
+
+        .music-btn.paused {
+            background: #fff;
+            color: #94a3b8;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="pb-32">
 
+    <!-- Audio Player -->
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="music-btn paused" onclick="toggleMusic()">
+        <i id="music-icon" data-lucide="music"></i>
+    </button>
+
     <script>
-        /**
-         * PENGATURAN TAHUNAN: 
-         * Ubah tanggal ini ke 1 Ramadhan tahun depan jika ingin dipakai jangka panjang.
-         */
+        // Tanggal mulai malam pertama Ramadhan (saat tarawih pertama dimulai)
         const RAMADHAN_START_DATE = new Date('2026-02-18'); 
 
         const RAMADHAN_DATA = {
             malamAktif: () => {
                 const now = new Date();
                 const start = new Date(RAMADHAN_START_DATE);
-                start.setHours(0,0,0,0);
-                const today = new Date(now);
-                today.setHours(0,0,0,0);
                 
-                const diffTime = today - start;
+                // Set semua ke jam 00:00 untuk menghitung selisih hari murni
+                const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                
+                // Hitung selisih hari (1 hari = 1 malam ramadhan)
+                const diffTime = currentDay - startDay;
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
                 
-                // Malam Ramadhan baru dimulai setelah Maghrib (18:18)
-                const isAfterMaghrib = now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 18);
-                const malam = isAfterMaghrib ? diffDays + 1 : diffDays;
-                
-                return Math.max(1, Math.min(malam, 30));
+                // Karena pergantian terjadi tepat di jam 00:00, kita hanya mengembalikan diffDays
+                // Minimal malam ke-1, maksimal malam ke-30
+                return Math.max(1, Math.min(diffDays, 30));
             },
             tarawih: [
                 { malam: 1, tgl: "Rabu, 18 Feb", imam: "Ust. H. Najamuddin, S.Pd.I", bilal: "Romdhoni", muazin: "Muhammad Zidan" },
@@ -199,13 +237,31 @@
         };
 
         const FIXED_PRAYER_TIMES = {
-            "Imsak": "04:32",
-            "Subuh": "04:42",
-            "Dzuhur": "12:10",
-            "Ashar": "15:19",
-            "Maghrib": "18:18",
-            "Isya": "19:28"
+            "Imsak": "04:32", "Subuh": "04:42", "Dzuhur": "12:10", "Ashar": "15:19", "Maghrib": "18:17", "Isya": "19:27"
         };
+
+        const music = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-toggle');
+        const musicIcon = document.getElementById('music-icon');
+
+        function toggleMusic() {
+            if (music.paused) {
+                music.play();
+                musicBtn.classList.replace('paused', 'playing');
+                musicIcon.setAttribute('data-lucide', 'pause');
+            } else {
+                music.pause();
+                musicBtn.classList.replace('playing', 'paused');
+                musicIcon.setAttribute('data-lucide', 'music');
+            }
+            lucide.createIcons();
+        }
+
+        document.body.addEventListener('click', () => {
+            if (music.paused && !musicBtn.dataset.interacted) {
+                musicBtn.dataset.interacted = "true";
+            }
+        }, { once: true });
     </script>
 
     <!-- Header -->
@@ -213,24 +269,21 @@
         <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
             <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                <!-- LOGO MUSHOLLA DENGAN URL -->
-                <div class="w-20 h-20 md:w-28 md:h-28 bg-white/5 backdrop-blur-md rounded-[2rem] border border-white/10 flex items-center justify-center shadow-2xl shrink-0 overflow-hidden p-3">
-                    <img src="https://i.ibb.co.com/W4rmSh0f/white-mnf2.png" class="w-full h-full object-contain rounded-xl">
+                <div class="w-24 h-24 md:w-32 md:h-32 bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/10 flex items-center justify-center shadow-2xl shrink-0 overflow-hidden p-3">
+                    <img src="https://i.ibb.co.com/W4rmSh0f/white-mnf2.png" class="w-full h-full object-contain rounded-xl" onerror="this.src='https://via.placeholder.com/150?text=MNF'">
                 </div>
-
                 <div>
                     <div class="inline-flex items-center gap-3 bg-emerald-900/50 border border-emerald-800 px-5 py-1.5 rounded-full mb-6">
                         <span class="live-pulse"></span>
                         <span id="ramadhan-count" class="text-xs font-black uppercase tracking-widest text-emerald-300">Ramadhan 1447 H</span>
                     </div>
-                    <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-2 uppercase leading-none text-shadow">Musholla <br class="md:hidden"> <span class="text-yellow-400">Nurul Falah</span></h1>
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-2 uppercase leading-none">Musholla <br class="md:hidden"> <span class="text-yellow-400">Nurul Falah</span></h1>
                     <p class="text-emerald-100/60 text-base font-bold italic">Panitia Ta'mir Ramadhan 1447H</p>
                 </div>
             </div>
-            
             <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-[2.5rem] text-center min-w-[280px] shadow-2xl">
                 <div id="digital-clock" class="text-5xl font-black font-mono text-yellow-400 tracking-tighter mb-2">00:00:00</div>
-                <p id="current-date" class="text-xs uppercase font-black tracking-[0.2em] text-emerald-300">JUM'AT, 20 FEBRUARI 2026</p>
+                <p id="current-date" class="text-xs uppercase font-black tracking-[0.2em] text-emerald-300">--</p>
             </div>
         </div>
     </div>
@@ -238,70 +291,44 @@
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-6 -mt-12 relative z-20">
         
-        <!-- DASHBOARD TAB -->
         <div id="tab-dashboard" class="tab-content space-y-8">
-            
-            <!-- Prayer Grid -->
-            <div id="prayer-grid" class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <!-- Auto Generated -->
-            </div>
+            <div id="prayer-grid" class="grid grid-cols-2 md:grid-cols-6 gap-4"></div>
 
-            <!-- Greeting Card -->
             <div class="greeting-gradient p-8 md:p-12 rounded-[3rem] text-center shadow-2xl relative overflow-hidden border border-emerald-800">
-                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none flex items-center justify-center">
-                    <i data-lucide="moon" class="w-64 h-64 text-white"></i>
-                </div>
                 <div class="relative z-10">
                     <h2 class="text-yellow-400 font-black text-2xl md:text-4xl uppercase tracking-tighter mb-3 leading-tight">Selamat Menunaikan <br>Ibadah Puasa</h2>
                     <p class="text-emerald-100/80 font-bold text-sm md:text-lg max-w-2xl mx-auto italic">"Semoga Allah SWT menerima amal ibadah kita di bulan yang penuh berkah ini dan senantiasa melimpahkan hidayah-Nya."</p>
                 </div>
             </div>
 
-            <!-- Active Sessions Highlights -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Tarawih Highlight -->
                 <div id="session-tarawih" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
                     <div class="flex items-center justify-between mb-6">
-                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
-                            <i data-lucide="users" class="w-8 h-8"></i>
-                        </div>
-                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Mulai 19:28</span>
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg"><i data-lucide="users" class="w-8 h-8"></i></div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Tarawih</span>
                     </div>
                     <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Imam Tarawih</p>
                     <h3 id="live-tarawih-imam" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
-                    
                     <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100">
-                        <div>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p>
-                            <p id="live-tarawih-bilal" class="text-sm font-black text-slate-700">--</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p>
-                            <p id="live-tarawih-muazin" class="text-sm font-black text-slate-700">--</p>
-                        </div>
+                        <div><p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p><p id="live-tarawih-bilal" class="text-sm font-black text-slate-700">--</p></div>
+                        <div><p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p><p id="live-tarawih-muazin" class="text-sm font-black text-slate-700">--</p></div>
                     </div>
                 </div>
 
-                <!-- Tadarus Highlight -->
                 <div id="session-tadarus" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
                     <div class="flex items-center justify-between mb-6">
-                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
-                            <i data-lucide="book-open" class="w-8 h-8"></i>
-                        </div>
-                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Mulai 20:40</span>
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg"><i data-lucide="book-open" class="w-8 h-8"></i></div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Tadarus</span>
                     </div>
-                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Pembaca Al-Qur'an</p>
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Petugas Tadarus</p>
                     <h3 id="live-tadarus-group" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
                     <div id="live-tadarus-badge" class="inline-block bg-yellow-400 text-emerald-950 font-black text-[10px] px-3 py-1 rounded-lg uppercase">Juz: --</div>
                 </div>
 
-                <!-- Donatur Highlight -->
                 <div id="session-donasi" class="glass-card p-8 rounded-[3rem] border-t-[6px] border-emerald-600">
                     <div class="flex items-center justify-between mb-6">
-                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg">
-                            <i data-lucide="gift" class="w-8 h-8"></i>
-                        </div>
-                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Malam Ini</span>
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center icon-bg"><i data-lucide="gift" class="w-8 h-8"></i></div>
+                        <span class="text-xs font-black bg-slate-100 px-4 py-1.5 rounded-full text-slate-600 uppercase tracking-widest">Donatur</span>
                     </div>
                     <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Donatur Konsumsi</p>
                     <h3 id="live-donatur-name" class="text-2xl font-black text-slate-800 leading-tight mb-4">--</h3>
@@ -310,42 +337,28 @@
             </div>
         </div>
 
-        <!-- TABS OTHERS -->
         <div id="tab-petugas" class="tab-content hidden space-y-6">
             <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Petugas Tarawih</h2>
             <div id="container-petugas" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
 
         <div id="tab-tadarus" class="tab-content hidden space-y-6">
-            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Jadwal Tadarus</h2>
+            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Petugas Tadarus</h2>
             <div id="container-tadarus" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
 
         <div id="tab-donatur" class="tab-content hidden space-y-6">
-            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Donatur Tadarus</h2>
+            <h2 class="text-2xl font-black text-emerald-900 px-2 uppercase tracking-tighter italic">Konsumsi Tadarus</h2>
             <div id="container-donatur" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
-
     </main>
 
     <!-- Navigation -->
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[94%] max-w-xl bg-white/95 backdrop-blur-2xl border border-white p-2 rounded-[3rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] flex justify-between items-center z-50">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all">
-            <i data-lucide="home" class="w-6 h-6 mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter">Beranda</span>
-        </button>
-        <button onclick="switchTab('petugas')" id="nav-petugas" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
-            <i data-lucide="shield-check" class="w-6 h-6 mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter">Petugas Tarawih</span>
-        </button>
-        <button onclick="switchTab('tadarus')" id="nav-tadarus" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
-            <i data-lucide="book-copy" class="w-6 h-6 mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter">Petugas Tadarus</span>
-        </button>
-        <button onclick="switchTab('donatur')" id="nav-donatur" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400">
-            <i data-lucide="heart-handshake" class="w-6 h-6 mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter">Konsumsi Tadarus</span>
-        </button>
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[94%] max-w-xl bg-white/95 backdrop-blur-2xl border border-white p-2 rounded-[3rem] shadow-2xl flex justify-between items-center z-50">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all"><i data-lucide="home" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-black uppercase tracking-tighter">Beranda</span></button>
+        <button onclick="switchTab('petugas')" id="nav-petugas" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400"><i data-lucide="shield-check" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-black uppercase tracking-tighter">Tarawih</span></button>
+        <button onclick="switchTab('tadarus')" id="nav-tadarus" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400"><i data-lucide="book-copy" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-black uppercase tracking-tighter">Tadarus</span></button>
+        <button onclick="switchTab('donatur')" id="nav-donatur" class="nav-btn flex-1 flex flex-col items-center py-3.5 rounded-[2.5rem] transition-all text-slate-400"><i data-lucide="heart-handshake" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-black uppercase tracking-tighter">Konsumsi</span></button>
     </nav>
 
     <script>
@@ -360,11 +373,17 @@
         function initClock() {
             setInterval(() => {
                 const now = new Date();
-                document.getElementById('digital-clock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                const clockText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                document.getElementById('digital-clock').innerText = clockText;
+                
+                // Cek jika tepat tengah malam, update tampilan dashboard
+                if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+                    updateDashboard();
+                }
+                
                 checkActiveSessions();
             }, 1000);
-            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', options).toUpperCase();
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
         }
 
         function renderPrayerGrid() {
@@ -385,11 +404,11 @@
             document.getElementById('live-tarawih-imam').innerText = t.imam;
             document.getElementById('live-tarawih-bilal').innerText = t.bilal;
             document.getElementById('live-tarawih-muazin').innerText = t.muazin;
-
-            const td = RAMADHAN_DATA.tadarus.find(x => x.malam === malam) || { group: "TBA", juz: "-", target: "-" };
+            
+            const td = RAMADHAN_DATA.tadarus.find(x => x.malam === malam) || { group: "TBA", juz: "-" };
             document.getElementById('live-tadarus-group').innerText = td.group;
             document.getElementById('live-tadarus-badge').innerText = `Juz: ${td.juz}`;
-
+            
             const d = RAMADHAN_DATA.donatur.find(x => x.malam === malam) || { nama: "Terbuka Untuk Umum", item: "Hubungi Ta'mir" };
             document.getElementById('live-donatur-name').innerText = d.nama;
             document.getElementById('live-donatur-item').innerText = d.item;
@@ -398,36 +417,31 @@
         function checkActiveSessions() {
             const now = new Date();
             const curMin = now.getHours() * 60 + now.getMinutes();
-
-            // Highlight Sholat saat ini (aktif selama 45 menit sejak waktu shalat)
+            
             Object.keys(FIXED_PRAYER_TIMES).forEach(key => {
                 const [h, m] = FIXED_PRAYER_TIMES[key].split(':').map(Number);
                 const pMin = h * 60 + m;
                 const el = document.getElementById(`prayer-${key}`);
-                if (el) {
-                    if (curMin >= pMin && curMin < pMin + 45) el.classList.add('session-active');
-                    else el.classList.remove('session-active');
-                }
+                if (el) { (curMin >= pMin && curMin < pMin + 45) ? el.classList.add('session-active') : el.classList.remove('session-active'); }
             });
-
-            // Highlight Sesi Kegiatan
+            
             const sessions = [
                 { id: 'session-tarawih', start: 19 * 60 + 20, end: 20 * 60 + 40 },
                 { id: 'session-tadarus', start: 20 * 60 + 41, end: 22 * 60 + 0 }
             ];
+            
             sessions.forEach(s => {
                 const el = document.getElementById(s.id);
-                if (el && curMin >= s.start && curMin <= s.end) el.classList.add('session-active');
-                else if (el) el.classList.remove('session-active');
+                if (el) { (curMin >= s.start && curMin <= s.end) ? el.classList.add('session-active') : el.classList.remove('session-active'); }
             });
         }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
+            document.querySelectorAll('.nav-btn').forEach(btn => { 
+                btn.classList.remove('active'); 
+                btn.classList.add('text-slate-400'); 
             });
             document.getElementById(`nav-${tabId}`).classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -441,19 +455,10 @@
                         <div class="w-12 h-12 bg-emerald-900 text-white rounded-2xl flex items-center justify-center font-black text-sm">${item.malam}</div>
                         <span class="text-[10px] font-black text-emerald-600 uppercase bg-emerald-50 px-3 py-1 rounded-lg">${item.tgl}</span>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Imam Tarawih</p>
-                        <h4 class="font-black text-slate-800 text-xl leading-tight">${item.imam}</h4>
-                    </div>
+                    <div><p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Imam Tarawih</p><h4 class="font-black text-slate-800 text-xl leading-tight">${item.imam}</h4></div>
                     <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                        <div>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p>
-                            <p class="text-sm font-black text-slate-700">${item.bilal}</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p>
-                            <p class="text-sm font-black text-slate-700">${item.muazin}</p>
-                        </div>
+                        <div><p class="text-[9px] font-bold text-slate-400 uppercase">Bilal</p><p class="text-sm font-black text-slate-700">${item.bilal}</p></div>
+                        <div><p class="text-[9px] font-bold text-slate-400 uppercase">Muazin</p><p class="text-sm font-black text-slate-700">${item.muazin}</p></div>
                     </div>
                 </div>
             `).join('');
@@ -472,15 +477,10 @@
             document.getElementById('container-donatur').innerHTML = RAMADHAN_DATA.donatur.map(item => `
                 <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center gap-6">
                     <div class="w-14 h-14 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center font-black text-lg">${item.malam}</div>
-                    <div>
-                        <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">${item.tgl}</p>
-                        <h4 class="font-black text-slate-800 text-lg leading-tight">${item.nama}</h4>
-                        <p class="text-sm font-bold text-slate-500">${item.item}</p>
-                    </div>
+                    <div><p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">${item.tgl}</p><h4 class="font-black text-slate-800 text-lg leading-tight">${item.nama}</h4><p class="text-sm font-bold text-slate-500">${item.item}</p></div>
                 </div>
             `).join('');
         }
     </script>
 </body>
-
 </html>
